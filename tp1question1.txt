@@ -1,0 +1,89 @@
+package tp1;
+import java.io.*;
+import java.net.*;
+
+public class client {
+    public static void main(String[] args) throws IOException {
+        // Création d'une socket pour le client et spécification de l'adresse IP et du port du serveur
+        Socket socket = new Socket("localhost", 1234);
+
+        // Affichage de l'adresse et du port du client
+        System.out.println("Adresse IP et port du client : " + socket.getLocalAddress() + ":" + socket.getLocalPort());
+        // Affichage de l'adresse et du port du serveur
+        System.out.println("Adresse IP et port du serveur : " + socket.getInetAddress() + ":" + socket.getPort());
+
+        // Création d'un flux de sortie pour envoyer les données au serveur
+        PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+        // Création d'un flux d'entrée pour recevoir les données du serveur
+        BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+
+        // Lecture des deux chaines saisies par l'utilisateur
+        BufferedReader input = new BufferedReader(new InputStreamReader(System.in));
+        System.out.print("Entrez la première chaine : ");
+        String chaine1 = input.readLine();
+        System.out.print("Entrez la deuxième chaine : ");
+        String chaine2 = input.readLine();
+
+        // Envoi des deux chaines au serveur
+        out.println(chaine1);
+        out.println(chaine2);
+
+        // Lecture de la réponse du serveur et affichage
+        String reponse = in.readLine();
+        System.out.println("Chaine 1 : " + chaine1);
+        System.out.println("Chaine 2 : " + chaine2);
+        System.out.println("Réponse du serveur : " + reponse);
+
+        // Fermeture des flux et de la socket
+        out.close();
+        in.close();
+        socket.close();
+    }
+}
+
+
+
+
+
+
+
+package tp1;
+import java.io.*;
+import java.net.*;
+
+public class serveur {
+    public static void main(String[] args) throws IOException {
+        // Création d'une socket pour le serveur et spécification d'un port pour le serveur
+        ServerSocket serverSocket = new ServerSocket(1234);
+        System.out.println("Le serveur est en attente de clients...");
+
+        // Attente d'un client et création d'une socket pour le client
+        Socket clientSocket = serverSocket.accept();
+        System.out.println("Connexion acceptée depuis " + clientSocket.getInetAddress());
+
+        // Création d'un flux d'entrée pour recevoir les données du client
+        BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+        // Création d'un flux de sortie pour envoyer les données au client
+        PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
+
+        // Lecture des deux chaines envoyées par le client
+        String chaine1 = in.readLine();
+        String chaine2 = in.readLine();
+
+        // Vérification de la présence de chaine2 dans chaine1
+        if (chaine1.contains(chaine2)) {
+            // Envoi de la réponse au client si chaine2 est trouvée dans chaine1
+            out.println(chaine1 + " contient " + chaine2);
+        } else {
+            // Envoi de la réponse au client si chaine2 n'est pas trouvée dans chaine1
+            out.println(chaine1 + " ne contient pas " + chaine2);
+        }
+
+        // Fermeture des flux et de la socket client
+        out.close();
+        in.close();
+        clientSocket.close();
+        // Fermeture de la socket serveur
+        serverSocket.close();
+    }
+}

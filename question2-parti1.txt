@@ -1,0 +1,90 @@
+package tp1q2;
+
+import java.io.*;
+import java.net.*;
+
+public class client{
+    public static void main(String[] args) throws IOException {
+        // Connexion au serveur TCP sur le port 5000
+        Socket clientSocket = new Socket("localhost", 5000);
+        System.out.println("Le client est connecté au serveur sur le port " + clientSocket.getPort() + " depuis l'adresse " + clientSocket.getLocalAddress() + ".");
+        
+        // Création des flux de communication avec le serveur
+        InputStream inputStream = clientSocket.getInputStream();
+        OutputStream outputStream = clientSocket.getOutputStream();
+        DataInputStream dataInputStream = new DataInputStream(inputStream);
+        DataOutputStream dataOutputStream = new DataOutputStream(outputStream);
+        
+        // Lecture des chaines à envoyer
+        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+        System.out.print("Entrez la chaine 1 : ");
+        String chaine1 = br.readLine();
+        System.out.print("Entrez la chaine 2 : ");
+        String chaine2 = br.readLine();
+        
+        // Envoi des chaines au serveur
+        dataOutputStream.writeUTF(chaine1);
+        dataOutputStream.writeUTF(chaine2);
+        dataOutputStream.flush();
+        
+        // Lecture de la réponse du serveur
+        String reponse = dataInputStream.readUTF();
+        System.out.println("Le serveur a répondu : " + reponse);
+        
+        // Fermeture des flux et de la connexion avec le serveur
+        dataInputStream.close();
+        dataOutputStream.close();
+        clientSocket.close();
+    }
+}
+
+
+
+
+
+
+
+
+package tp1q2;
+
+import java.io.*;
+import java.net.*;
+
+public class serveur {
+    public static void main(String[] args) throws IOException {
+        // Création d'un serveur TCP sur le port 5000
+        ServerSocket serverSocket = new ServerSocket(5000);
+        System.out.println("Le serveur est en attente de clients sur le port " + serverSocket.getLocalPort() + "...");
+        
+        while (true) {
+            // Attente de la connexion d'un client
+            Socket clientSocket = serverSocket.accept();
+            System.out.println("Un client s'est connecté depuis l'adresse " + clientSocket.getInetAddress() + " sur le port " + clientSocket.getPort() + ".");
+            
+            // Création des flux de communication avec le client
+            InputStream inputStream = clientSocket.getInputStream();
+            OutputStream outputStream = clientSocket.getOutputStream();
+            DataInputStream dataInputStream = new DataInputStream(inputStream);
+            DataOutputStream dataOutputStream = new DataOutputStream(outputStream);
+            
+            // Lecture des chaines envoyées par le client
+            String chaine1 = dataInputStream.readUTF();
+            String chaine2 = dataInputStream.readUTF();
+            System.out.println("Le client a envoyé les chaines suivantes : " + chaine1 + " et " + chaine2);
+            
+            // Vérification de la présence de chaine2 dans chaine1
+            if (chaine1.contains(chaine2)) {
+                dataOutputStream.writeUTF(chaine1 + " contient " + chaine2);
+            } else {
+                dataOutputStream.writeUTF(chaine1 + " ne contient pas " + chaine2);
+            }
+            
+            // Envoi de la réponse au client
+            dataOutputStream.flush();
+            
+            // Fermeture des flux et de la connexion avec le client
+            dataInputStream.close();
+            dataOutputStream.close();
+            clientSocket.close();
+        }
+    }}

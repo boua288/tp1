@@ -1,0 +1,78 @@
+package tp1q3;
+	import java.io.*;
+	import java.net.*;
+
+	public class MultiThreadedClient {
+	    public static void main(String[] args) {
+	        try {
+	            Socket socket = new Socket("localhost", 7000);
+	            System.out.println("Connecter au server");
+
+	            BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+	            PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
+
+	            String message = "Hello ";
+	            writer.println(message);
+	            System.out.println("envoyer un  message au server: " + message);
+
+	            String response = reader.readLine();
+	            System.out.println("reçois  un message de  server: " + response);
+
+	            reader.close();
+	            writer.close();
+	            socket.close();
+	        } catch (IOException e) {
+	            e.printStackTrace();
+	        }
+	    }
+	}
+package tp1q3;
+
+import java.io.*;
+import java.net.*;
+
+public class MultiThreadedServer {
+    public static void main(String[] args) {
+        try {
+            ServerSocket serverSocket = new ServerSocket(7000);
+            System.out.println("Server est launcher");
+
+            while (true) {
+                Socket socket = serverSocket.accept();
+                System.out.println("Client est connecter");
+
+                Thread t = new Thread(new ClientHandler(socket));
+                t.start();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static class ClientHandler implements Runnable {
+        private final Socket socket;
+
+        public ClientHandler(Socket socket) {
+            this.socket = socket;
+        }
+
+        public void run() {
+            try {
+                BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
+
+                String message = reader.readLine();
+                System.out.println("reçois  un  message a partir de client client: " + message);
+
+                writer.println("Server reçois  un mess " + message);
+
+                reader.close();
+                writer.close();
+                socket.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+}
+

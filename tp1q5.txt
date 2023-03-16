@@ -1,0 +1,189 @@
+package tp1q5;
+import java.io.*;
+import java.net.*;
+import java.util.Scanner;
+
+public class Client {
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+        System.out.print("Enter your name: ");
+        String name = scanner.nextLine();
+
+        try {
+            // Connect to the server
+            Socket socket = new Socket("localhost", 12345);
+            System.out.println("Connected to the server");
+
+            // Create input and output streams for the socket
+            DataInputStream in = new DataInputStream(socket.getInputStream());
+            DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+
+            // Read the welcome message from the server
+            String welcomeMessage = in.readUTF();
+            System.out.println(welcomeMessage);
+
+            // Read the number of clients connected from the server
+            int numClients = in.readInt();
+            System.out.println("Number of clients connected: " + numClients);
+
+            // Send messages to the server and receive responses
+            Thread sendThread = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    while (true) {
+                        try {
+                            // Send a message to the server
+                            String message = scanner.nextLine();
+                            out.writeUTF(name + ": " + message);
+                            out.flush();
+
+                            // Pause for a moment
+                            Thread.sleep(500);
+                        } catch (IOException | InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            });
+
+            Thread receiveThread = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    while (true) {
+                        try {
+                            // Read the response from the server
+                            String response = in.readUTF();
+                            System.out.println(response);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            });
+
+            // Start the threads
+            sendThread.start();
+            receiveThread.start();
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
+package tp1q5;
+import java.io.*;
+import java.net.*;
+import java.util.ArrayList;
+import java.util.List;
+
+public class Server {
+    public static void main(String[] args) {
+        try {
+            // Create a server socket and bind it to a port
+            ServerSocket serverSocket = new ServerSocket(12345);
+            System.out.println("Server a launcher ");
+
+            // calculer le nombre de client
+            List<ClientHandler> clients = new ArrayList<>();
+
+            while (true) {
+                // attend  client pour connect
+                Socket clientSocket = serverSocket.accept();
+                System.out.println("Client connected: " + clientSocket);
+
+                // Cree un nouveaux   thread to handle the client
+                ClientHandler clientHandler = new ClientHandler(clientSocket, clients);
+
+                // Ajouter  client handler dans la list des clients
+                clients.add(clientHandler);
+
+                // debut de thread
+                clientHandler.start();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+class ClientHandler extends Thread { 
+	//Cela signifie que la classe "ClientHandler" 
+	//a accès aux méthodes et aux propriétés de la classe Thread, et peut également être exécutée en tant que thread indépendant.
+    private final Socket socket;
+    private final List<ClientHandler> clients;
+    private DataInputStream in;
+    private DataOutputStream out;
+    private String name;
+
+    public ClientHandler(Socket socket, List<ClientHandler> clients) {
+        this.socket = socket;
+        this.clients = clients;
+    }
+
+    @Override
+
+    public void run() {
+        try {
+  //"run()" gérer la communication avec un client. Lorsqu'un client se connecte
+        	//, un nouveau thread ClientHandler est créé pour gérer cette connexion, et la méthode "run()" est appelée automatiquement pour ce
+        //thread
+            // Cre input and output streams for the socket
+            in = new DataInputStream(socket.getInputStream());
+            out = new DataOutputStream(socket.getOutputStream());
+
+            // envoyer   welcome message au client
+            out.writeUTF("Welcome to the chat room!");
+            out.flush();
+
+            // envoyer le numbr de clients connecter au tous les  clients
+            int numClients = clients.size();
+            for (ClientHandler client : clients) {
+                client.sendNumClients(numClients);
+            }
+
+            // lire le name de client
+            name = in.readUTF();
+            System.out.println("Client name: " + name);
+
+            // envoyer a welcome message pour tous les  clients
+            String message = name + " has joined the chat";
+            for (ClientHandler client : clients) {
+                client.sendMessage(message);
+            }
+
+            // ecouter  les messages de client
+            while (true) {
+                String messageReceived = in.readUTF();
+                System.out.println(name + ": " + messageReceived);
+
+                // envoyer le message aux clients
+                for (ClientHandler client : clients) {
+                    client.sendMessage(name + ": " + messageReceived);
+                }
+            }
+        } catch (IOException e) {
+            // le cas ou the client diconnecté
+            clients.remove(this);
+            String message = name + " has left the chat";
+            System.out.println(message);
+            for (ClientHandler client : clients) {
+                try {
+					client.sendMessage(message);
+				} catch (IOException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+            }
+        }
+    }
+
+    public void sendNumClients(int numClients) throws IOException {
+        out.writeInt(numClients);
+        out.flush();
+    }
+
+    public void sendMessage(String message) throws IOException {
+        out.writeUTF(message);
+        out.flush();
+    }
+}

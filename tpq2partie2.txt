@@ -1,0 +1,98 @@
+import java.io.*;
+import java.net.*;
+
+public class Server {
+    public static void main(String[] args) {
+        try {
+            ServerSocket serverSocket = new ServerSocket(5000);
+            System.out.println("Server is listening on port 5000");
+
+            while (true) {
+                Socket socket = serverSocket.accept();
+                System.out.println("New client connected");
+
+                ClientHandler clientHandler = new ClientHandler(socket);
+                new Thread(clientHandler).start();
+            }
+        } catch (IOException ex) {
+            System.out.println("Error: " + ex.getMessage());
+        }
+    }
+}
+
+class ClientHandler implements Runnable {
+    private Socket socket;
+
+    public ClientHandler(Socket socket) {
+        this.socket = socket;
+    }
+
+    public void run() {
+        try {
+            // Get the input and output streams of the socket
+            BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            PrintWriter out = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()), true);
+
+            // Read the input from the client
+            String chaine1 = in.readLine();
+            String chaine2 = in.readLine();
+
+            // Check if chaine2 is present in chaine1
+            boolean contains = chaine1.contains(chaine2);
+
+            // Send the response to the client
+            if (contains) {
+                out.println("La chaine \"" + chaine1 + "\" contient la chaine \"" + chaine2 + "\"");
+            } else {
+                out.println("La chaine \"" + chaine1 + "\" ne contient pas la chaine \"" + chaine2 + "\"");
+            }
+
+            // Close the socket
+            socket.close();
+        } catch (IOException ex) {
+            System.out.println("Error: " + ex.getMessage());
+        }
+    }
+}
+Java.net Maintenance outage
+Amina
+Amina Bmr
+import java.io.*;
+import java.net.*;
+
+public class Client {
+    public static void main(String[] args) {
+        try {
+            // Get the IP address of the server
+            InetAddress serverAddress = InetAddress.getLocalHost();
+
+            // Connect to the server on port 5000
+            Socket socket = new Socket(serverAddress, 5000);
+
+            // Get the input and output streams of the socket
+            BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            PrintWriter out = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()), true);
+
+            // Read the input from the user
+            BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+            System.out.println("Entrez la chaine 1 :");
+            String chaine1 = reader.readLine();
+            System.out.println("Entrez la chaine 2 :");
+            String chaine2 = reader.readLine();
+
+            // Send the input to the server
+            out.println(chaine1);
+            out.println(chaine2);
+
+            // Receive the response from the server and print it
+            String response = in.readLine();
+            System.out.println("Serveur: " + response);
+
+            // Close the socket
+            socket.close();
+        } catch (IOException ex) {
+            System.out.println("Error: " + ex.getMessage());
+        }
+    }
+}
+Java.net Maintenance outage

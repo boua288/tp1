@@ -1,0 +1,94 @@
+package tp1q4;
+
+import java.io.*;
+import java.net.*;
+
+public class Client {
+    public static void main(String[] args) {
+        try {
+            // Se connecter au serveur sur le port 1234
+            Socket socket = new Socket("localhost", 6000);
+            System.out.println("Connecter au server");
+
+            BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+            PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
+
+            // Boucle pour envoyer des messages au serveur
+            String inputLine;
+            while ((inputLine = reader.readLine()) != null) {
+                writer.println(inputLine);
+
+                // Attendre la réponse du serveur
+                BufferedReader serverReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                String serverResponse = serverReader.readLine();
+                System.out.println("Recois un response a partir de  server: " + serverResponse);
+            }
+
+            // Fermer les flux d'entrée/sortie et la connexion avec le serveur
+            reader.close();
+            writer.close();
+            socket.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+package tp1q4;
+import java.io.*;
+import java.net.*;
+
+public class MultiClientServer {
+    public static void main(String[] args) {
+        try {
+            ServerSocket serverSocket = new ServerSocket(6000);
+            System.out.println("Server est  au  port 6060");
+
+            // Boucle infinie pour attendre de nouvelles connexions client
+            while (true) {
+                Socket clientSocket = serverSocket.accept();
+                System.out.println("nouveau client connecter");
+
+                // Créer un nouveau thread pour gérer la connexion client
+                Thread clientThread = new Thread(new ClientHandler(clientSocket));
+                clientThread.start();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // Classe interne pour gérer chaque connexion client dans un thread séparé
+    private static class ClientHandler implements Runnable {
+        private Socket clientSocket;
+
+        public ClientHandler(Socket socket) {
+            this.clientSocket = socket;
+        }
+
+        public void run() {
+            try {
+                BufferedReader reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+                PrintWriter writer = new PrintWriter(clientSocket.getOutputStream(), true);
+
+                // Boucle pour recevoir les messages du client
+                String inputLine;
+                while ((inputLine = reader.readLine()) != null) {
+                    System.out.println("Recois un message a partir de client: " + inputLine);
+
+                    // Répondre au client avec un message personnalisé
+                    String response = "Hello client, j'ai recois  votre message: " + inputLine;
+                    writer.println(response);
+                    System.out.println("envoyer response au client: " + response);
+                }
+
+                // Fermer les flux d'entrée/sortie et la connexion client
+                reader.close();
+                writer.close();
+                clientSocket.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+}
